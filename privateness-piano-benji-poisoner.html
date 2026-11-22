@@ -1,0 +1,1470 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PrivateNess Data Poisoning Engine / Deterministic Sound Proof</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0f14;
+      --panel: #131b23;
+      --panel-2: #182633;
+      --text: #e8f1f2;
+      --muted: #9fb2bd;
+      --line: #2b3e4d;
+      --accent: #45d19e;
+      --accent-2: #78a6ff;
+      --accent-3: #f3c969;
+      --danger: #ff8178;
+      --shadow: rgba(0, 0, 0, 0.32);
+      --radius: 8px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 18% 10%, rgba(69, 209, 158, 0.12), transparent 26rem),
+        radial-gradient(circle at 84% 4%, rgba(120, 166, 255, 0.12), transparent 24rem),
+        var(--bg);
+      color: var(--text);
+    }
+
+    button, input, select {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: #15212b;
+      color: var(--text);
+      border-radius: 7px;
+      padding: 0.62rem 0.78rem;
+      cursor: pointer;
+    }
+
+    button:hover, button:focus-visible {
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    button.primary {
+      background: linear-gradient(135deg, rgba(69, 209, 158, 0.22), rgba(120, 166, 255, 0.18));
+      border-color: rgba(69, 209, 158, 0.72);
+    }
+
+    button.ghost {
+      background: transparent;
+    }
+
+    button.tab {
+      text-align: left;
+      min-height: 3.2rem;
+    }
+
+    button.tab[aria-selected="true"] {
+      border-color: var(--accent);
+      background: rgba(69, 209, 158, 0.14);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    select, input[type="number"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #101922;
+      color: var(--text);
+      border-radius: 7px;
+      padding: 0.58rem 0.68rem;
+    }
+
+    .app {
+      width: min(1220px, calc(100% - 24px));
+      margin: 0 auto;
+      padding: 18px 0 26px;
+      display: grid;
+      gap: 14px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto;
+      gap: 14px;
+      align-items: end;
+      padding: 16px;
+      border: 1px solid var(--line);
+      background: rgba(19, 27, 35, 0.86);
+      border-radius: var(--radius);
+      box-shadow: 0 18px 50px var(--shadow);
+    }
+
+    h1, h2, h3, p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(1.55rem, 3.8vw, 2.8rem);
+      letter-spacing: 0;
+      line-height: 1.08;
+      font-weight: 700;
+    }
+
+    h2 {
+      font-size: 1.12rem;
+      font-weight: 650;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      font-size: 0.98rem;
+      font-weight: 650;
+      letter-spacing: 0;
+    }
+
+    .sub {
+      margin-top: 0.45rem;
+      color: var(--muted);
+      max-width: 76ch;
+    }
+
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .shell {
+      display: grid;
+      gap: 12px;
+    }
+
+    .tab-panel {
+      display: none;
+      gap: 12px;
+    }
+
+    .tab-panel.active {
+      display: grid;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .two {
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 0.48fr);
+    }
+
+    .three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      background: rgba(19, 27, 35, 0.86);
+      border-radius: var(--radius);
+      padding: 14px;
+      min-width: 0;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      gap: 10px;
+      align-items: end;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field span:first-child, label > span:first-child {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .stat {
+      display: grid;
+      gap: 4px;
+      min-height: 76px;
+    }
+
+    .stat .value {
+      font-size: 1.38rem;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .stat .label, .muted {
+      color: var(--muted);
+    }
+
+    .scope {
+      height: 118px;
+      border: 1px solid var(--line);
+      background: linear-gradient(90deg, rgba(69, 209, 158, 0.06), rgba(120, 166, 255, 0.07), rgba(243, 201, 105, 0.05));
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .keybed {
+      display: grid;
+      gap: 4px;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .black-row {
+      display: grid;
+      grid-template-columns: repeat(14, minmax(0, 1fr));
+      gap: 4px;
+      min-height: 76px;
+    }
+
+    .white-row {
+      display: grid;
+      grid-template-columns: repeat(14, minmax(0, 1fr));
+      gap: 4px;
+      min-height: 160px;
+    }
+
+    .key {
+      border: 1px solid var(--line);
+      min-width: 0;
+      display: grid;
+      align-content: end;
+      justify-items: center;
+      gap: 4px;
+      padding: 8px 3px;
+      border-radius: 0 0 8px 8px;
+      color: var(--text);
+      cursor: pointer;
+      transition: transform 90ms ease, border-color 90ms ease, background 90ms ease;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      text-align: center;
+    }
+
+    .key.is-on, .key:active {
+      transform: translateY(2px);
+      border-color: var(--accent);
+      background: rgba(69, 209, 158, 0.18);
+    }
+
+    .white {
+      background: #e4eef1;
+      color: #0b0f14;
+    }
+
+    .white .key-label {
+      color: #405460;
+    }
+
+    .black {
+      min-height: 76px;
+      background: #111923;
+      color: var(--text);
+    }
+
+    .spacer {
+      min-height: 76px;
+    }
+
+    .note {
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .key-label {
+      font-size: 0.74rem;
+      line-height: 1.05;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.035);
+      border-radius: 999px;
+      padding: 0.4rem 0.62rem;
+      overflow-wrap: anywhere;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(69, 209, 158, 0.18);
+      flex: 0 0 auto;
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .benji-button {
+      min-height: 118px;
+      text-align: left;
+      display: grid;
+      align-content: space-between;
+      gap: 12px;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    .benji-button strong {
+      display: block;
+      font-size: 1rem;
+    }
+
+    .benji-button small {
+      color: var(--muted);
+      line-height: 1.3;
+    }
+
+    .ledger {
+      display: grid;
+      gap: 7px;
+      max-height: 360px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .event {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.035);
+      border-radius: 7px;
+      padding: 9px;
+      display: grid;
+      gap: 4px;
+      overflow-wrap: anywhere;
+    }
+
+    .event strong {
+      font-weight: 650;
+    }
+
+    .event code, code {
+      font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+      font-size: 0.88em;
+      overflow-wrap: anywhere;
+    }
+
+    .matrix {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .module {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      display: grid;
+      gap: 7px;
+      min-height: 112px;
+    }
+
+    .bar {
+      height: 9px;
+      border-radius: 999px;
+      background: #0f151c;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .bar > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      transition: width 180ms ease;
+    }
+
+    .mono {
+      font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+    }
+
+    .warning {
+      border-color: rgba(243, 201, 105, 0.65);
+      background: rgba(243, 201, 105, 0.09);
+    }
+
+    .demo-label {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      border: 1px solid rgba(243, 201, 105, 0.72);
+      background: rgba(243, 201, 105, 0.12);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 0.26rem 0.5rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 920px) {
+      header, .two {
+        grid-template-columns: 1fr;
+      }
+      .header-actions {
+        justify-content: flex-start;
+      }
+      .controls, .three, .button-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .app {
+        width: min(100% - 16px, 1220px);
+        padding-top: 8px;
+      }
+      .tabs, .controls, .three, .button-grid, .matrix {
+        grid-template-columns: 1fr;
+      }
+      .black-row, .white-row {
+        gap: 3px;
+      }
+      .white-row {
+        min-height: 130px;
+      }
+      .key-label {
+        font-size: 0.66rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>PrivateNess Data Poisoning Engine / Deterministic Sound Proof</h1>
+        <p class="sub">The point is data poisoning. Sound is only a reproducibility proof: deterministic events go in, deterministic tones come out. REAL: WebAudio synthesis, local JSON export, and real <code>tshark -T json</code> capture ingest when supplied. DEMO: NCH Energy accounting and Benji-button NVS action mapping.</p>
+      </div>
+      <div class="header-actions">
+        <button class="primary" type="button" id="startAudio">Start audio</button>
+        <button type="button" id="exportState">Export session JSON</button>
+        <button class="ghost" type="button" id="resetSession">Reset session</button>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="Application tabs">
+      <button class="tab" type="button" aria-selected="true" data-tab="piano">Deterministic sound proof</button>
+      <button class="tab" type="button" aria-selected="false" data-tab="benji">Benji buttons with associated sound</button>
+      <button class="tab" type="button" aria-selected="false" data-tab="poisoner">Privateness Data Poisoner DEMO cadence preview</button>
+      <button class="tab" type="button" aria-selected="false" data-tab="capture">Wireshark-level capture ingest</button>
+    </nav>
+
+    <main class="shell">
+      <section class="tab-panel active" id="panel-piano">
+        <div class="controls card">
+          <label class="field">
+            <span>Stack focus</span>
+            <select id="stackFocus">
+              <option value="Full PrivateNess layered stack">Full PrivateNess layered stack</option>
+              <option value="Identity and WORM namespace">Identity and WORM namespace</option>
+              <option value="Transport and mesh routing">Transport and mesh routing</option>
+              <option value="Entropy and physical proof">Entropy and physical proof</option>
+              <option value="Settlement and NCH Energy">Settlement and NCH Energy</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Waveform</span>
+            <select id="waveform">
+              <option value="triangle">triangle</option>
+              <option value="sine">sine</option>
+              <option value="sawtooth">sawtooth</option>
+              <option value="square">square</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>DEMO NCH Energy reserve <span id="nchReserveRead">1440.000000</span></span>
+            <input id="nchReserve" type="range" min="60" max="10080" step="1" value="1440">
+          </label>
+          <label class="field">
+            <span>Tempo for DEMO Data Poisoner cadence preview <span id="tempoRead">96</span> events per minute</span>
+            <input id="tempo" type="range" min="24" max="240" step="1" value="96">
+          </label>
+        </div>
+
+        <div class="grid three">
+          <div class="card stat">
+            <span class="label">DEMO NCH Energy consumed this session</span>
+            <span class="value" id="nchConsumed">0.000000</span>
+            <span class="muted">This is local accounting only. No chain, wallet, or extension state is debited.</span>
+          </div>
+          <div class="card stat">
+            <span class="label">DEMO NCH Energy remaining from reserve</span>
+            <span class="value" id="nchRemaining">1440.000000</span>
+            <span class="muted">DEMO estimate for composition only; not verified on chain.</span>
+          </div>
+          <div class="card stat">
+            <span class="label">Tempo-derived DEMO cadence interval</span>
+            <span class="value" id="tempoInterval">625 ms</span>
+            <span class="muted">This tempo drives only the local preview in the Data Poisoner tab.</span>
+          </div>
+        </div>
+
+        <div class="scope" aria-label="Waveform view">
+          <canvas id="scope" width="1400" height="240"></canvas>
+        </div>
+
+        <div class="card">
+          <div class="row" style="margin-bottom: 10px;">
+            <span class="pill"><span class="dot"></span><span id="currentNote">Ready</span></span>
+            <button type="button" class="primary" id="playSequence">Replay deterministic stack sequence</button>
+            <button type="button" id="holdNotes">Hold notes</button>
+            <button type="button" class="ghost" id="clearNotes">Clear notes</button>
+          </div>
+          <div class="keybed" id="keybed" aria-label="Deterministic sound proof manual keybed">
+            <div class="black-row" id="blackRow"></div>
+            <div class="white-row" id="whiteRow"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="panel-benji">
+        <div class="grid two">
+          <div class="card">
+            <span class="demo-label">DEMO mapping</span>
+            <h2>Benji buttons with associated sound</h2>
+            <p class="sub">Each button plays a real local sound. Any NVS resolve-and-reveal or decoy launch meaning shown here is DEMO mapping only. This portable file never executes external values and never calls the network.</p>
+            <div class="button-grid" id="benjiButtons" style="margin-top: 12px;"></div>
+          </div>
+          <div class="card">
+            <h2>Benji DEMO ledger</h2>
+            <div class="ledger" id="benjiLedger"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="panel-poisoner">
+        <div class="grid two">
+          <div class="card">
+            <span class="demo-label">DEMO preview / no live poisoning</span>
+            <h2>Privateness.network Data Protection cadence reference</h2>
+            <p class="sub">Grounded in <code>github.com/jeff-bouchard/privateness-data-poisoner</code>: Manifest V3, Baseline / Moderate / Strict + Data Poisoning, deterministic per-origin noise, timing jitter, request identifiers, recent threats, and whitelists. This tab does not emit, modify, suppress, poison, or preview fake payloads.</p>
+            <div class="controls" style="margin-top: 12px;">
+              <label class="field">
+                <span>Mode</span>
+                <select id="poisonMode">
+                  <option value="baseline">Baseline</option>
+                  <option value="moderate">Moderate</option>
+                  <option value="strict" selected>Strict + Data Poisoning</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Repo payload format reference</span>
+                <select id="payloadFormat">
+                  <option value="application/json">application/json</option>
+                  <option value="application/x-www-form-urlencoded">application/x-www-form-urlencoded</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>DEMO NCH Energy per Data Poisoner event <span id="nchPerEventRead">0.031250</span></span>
+                <input id="nchPerEvent" type="range" min="0.001" max="0.25" step="0.001" value="0.03125">
+              </label>
+              <label class="field">
+                <span>RandPay risk divisor <span id="riskRead">256</span></span>
+                <input id="risk" type="range" min="1" max="1024" step="1" value="256">
+              </label>
+            </div>
+
+            <div class="row" style="margin-top: 12px;">
+              <button type="button" class="primary" id="previewPoisonCadence">Preview DEMO cadence plan</button>
+              <button type="button" class="ghost" id="clearPoisonEvents">Clear DEMO preview</button>
+            </div>
+
+            <div class="matrix" id="modules" style="margin-top: 12px;"></div>
+          </div>
+
+          <div class="card">
+            <h2>DEMO cadence preview</h2>
+            <div class="ledger" id="poisonLedger"></div>
+          </div>
+        </div>
+
+        <div class="card warning">
+          <h2>Master-rule boundary</h2>
+          <p class="sub">No mocks are presented as real. No placeholders are presented as shipped behavior. No fake verification is presented as verification. DEMO content is labeled DEMO on screen and in exports.</p>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="panel-capture">
+        <div class="grid two">
+          <div class="card">
+            <span class="demo-label">REAL input required</span>
+            <h2>Wireshark-level capture ingest</h2>
+            <p class="sub">Portable browser files cannot honestly sniff packets. Feed this tab a real <code>tshark -T json</code> export captured on your own authorized interface. Until a file is loaded, this tab shows no traffic and makes no claims.</p>
+            <div class="controls" style="margin-top: 12px;">
+              <label class="field">
+                <span>Import real tshark JSON export</span>
+                <input id="captureFile" type="file" accept=".json,application/json">
+              </label>
+              <label class="field">
+                <span>Deterministic mapping</span>
+                <select id="captureScale">
+                  <option value="fingerprint">Full event fingerprint</option>
+                  <option value="protocol">Protocol</option>
+                  <option value="length">Frame length</option>
+                  <option value="tempo">Arrival cadence</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>DEMO NCH Energy per captured packet <span id="nchPerPacketRead">0.005000</span></span>
+                <input id="nchPerPacket" type="range" min="0.001" max="0.05" step="0.001" value="0.005">
+              </label>
+              <div class="field">
+                <span>Capture boundary</span>
+                <button type="button" class="primary" id="playCapture">Replay deterministic sound proof</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <h2>Imported capture and event fingerprints</h2>
+            <div class="ledger" id="captureLedger"></div>
+          </div>
+        </div>
+        <div class="card warning">
+          <h2>Authorized capture only</h2>
+          <p class="sub">Use Npcap/Wireshark/tshark on systems and networks you own or are authorized to monitor. This file does not decrypt traffic, bypass access controls, or intercept third-party communications.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    "use strict";
+
+    const state = {
+      audio: null,
+      analyser: null,
+      master: null,
+      delay: null,
+      feedback: null,
+      active: new Map(),
+      latched: false,
+      sequenceTimer: null,
+      sequenceIndex: 0,
+      consumedNch: 0,
+      events: [],
+      capturePackets: [],
+      captureEvents: [],
+      lastPulse: 0
+    };
+
+    const notes = [
+      { note: "C4", frequency: 261.63, kind: "white", fullName: "Layer 0 OWF / Rompel identity anchor", key: "a", focus: "Identity and WORM namespace", benji: "Benji Button / sovereign identity anchor" },
+      { note: "C#4", frequency: 277.18, kind: "black", fullName: "RC4OK entropy mixing", key: "w", focus: "Entropy and physical proof", benji: "Benji Button / RC4OK entropy mask" },
+      { note: "D4", frequency: 293.66, kind: "white", fullName: "Layer 1 LBRTY radio when available", key: "s", focus: "Transport and mesh routing", benji: "Benji Button / radio transport decoy" },
+      { note: "D#4", frequency: 311.13, kind: "black", fullName: "TLSA DANE endpoint authentication", key: "e", focus: "Identity and WORM namespace", benji: "Benji Button / TLSA verification tone" },
+      { note: "E4", frequency: 329.63, kind: "white", fullName: "Layer 2 SoftEther VPN with NAT traversal and WireGuard", key: "d", focus: "Transport and mesh routing", benji: "Benji Button / SoftEther tunnel cover" },
+      { note: "F4", frequency: 349.23, kind: "white", fullName: "Layer 2.5 Skywire source-routed MPLS mesh", key: "f", focus: "Transport and mesh routing", benji: "Benji Button / Skywire next-hop-blind route" },
+      { note: "F#4", frequency: 369.99, kind: "black", fullName: "EmerSSH authenticated shell binding", key: "t", focus: "Identity and WORM namespace", benji: "Benji Button / EmerSSH operator phrase" },
+      { note: "G4", frequency: 392.00, kind: "white", fullName: "Layer 3 EmerDNS decentralized name resolution", key: "g", focus: "Identity and WORM namespace", benji: "Benji Button / EmerDNS name reveal" },
+      { note: "G#4", frequency: 415.30, kind: "black", fullName: "ENUMER phone and address discovery namespace", key: "y", focus: "Identity and WORM namespace", benji: "Benji Button / ENUMER alias chord" },
+      { note: "A4", frequency: 440.00, kind: "white", fullName: "WORM trust chain record", key: "h", focus: "Identity and WORM namespace", benji: "Benji Button / WORM record resolver" },
+      { note: "A#4", frequency: 466.16, kind: "black", fullName: "EmerDPO organization ownership", key: "u", focus: "Identity and WORM namespace", benji: "Benji Button / DPO ownership proof" },
+      { note: "B4", frequency: 493.88, kind: "white", fullName: "EmerSSL certificate binding", key: "j", focus: "Identity and WORM namespace", benji: "Benji Button / EmerSSL handshake" },
+      { note: "C5", frequency: 523.25, kind: "white", fullName: "UHEPRNG ultra-high-entropy generator", key: "k", focus: "Entropy and physical proof", benji: "Benji Button / UHEPRNG noise carrier" },
+      { note: "C#5", frequency: 554.37, kind: "black", fullName: "Skywire mesh route advertisement", key: "o", focus: "Transport and mesh routing", benji: "Benji Button / mesh advertisement pulse" },
+      { note: "D5", frequency: 587.33, kind: "white", fullName: "PBAT physical biometric authentication token", key: "l", focus: "Entropy and physical proof", benji: "Benji Button / PBAT bone-conduction motif" },
+      { note: "D#5", frequency: 622.25, kind: "black", fullName: "RFC 9497 ristretto255-SHA512 POPRF / VOPRF blind token", key: "p", focus: "Entropy and physical proof", benji: "Benji Button / blind-token shimmer" },
+      { note: "E5", frequency: 659.25, kind: "white", fullName: "IPFS and emerMAGNET content retrieval", key: ";", focus: "Transport and mesh routing", benji: "Benji Button / content retrieval decoy" },
+      { note: "F5", frequency: 698.46, kind: "white", fullName: "RandPay probabilistic micropayment settlement", key: "z", focus: "Settlement and NCH Energy", benji: "Benji Button / RandPay ticket roll" },
+      { note: "F#5", frequency: 739.99, kind: "black", fullName: "VRF verifiable random function service", key: "x", focus: "Entropy and physical proof", benji: "Benji Button / VRF reveal-after-consumption" },
+      { note: "G5", frequency: 783.99, kind: "white", fullName: "x402 HTTP 402 payment interface", key: "c", focus: "Settlement and NCH Energy", benji: "Benji Button / x402 payment-required motif" },
+      { note: "G#5", frequency: 830.61, kind: "black", fullName: "Emercoin NVS name-value storage operation", key: "v", focus: "Settlement and NCH Energy", benji: "Benji Button / NVS value reveal, never execute" },
+      { note: "A5", frequency: 880.00, kind: "white", fullName: "NCH Energy consumption and dissipation", key: "b", focus: "Settlement and NCH Energy", benji: "Benji Button / NCH Energy debit" },
+      { note: "A#5", frequency: 932.33, kind: "black", fullName: "Skywire exit edge with TLSA at the internet boundary", key: "n", focus: "Transport and mesh routing", benji: "Benji Button / exit-edge obfuscation" },
+      { note: "B5", frequency: 987.77, kind: "white", fullName: "Persona Engine derived pseudonymous identity", key: "m", focus: "Identity and WORM namespace", benji: "Benji Button / persona blend-set voice" }
+    ];
+
+    const dataPoisonerModules = [
+      { name: "Canvas noise", detail: "Tiny deterministic per-origin pixel perturbation to prevent stable canvas fingerprinting.", strict: 0.0025, moderate: 0.0008, baseline: 0.0002 },
+      { name: "Audio noise", detail: "Perturbs audio buffers and analyser reads to break audio fingerprinting.", strict: 0.0025, moderate: 0.0008, baseline: 0.0002 },
+      { name: "WebGL noise and vendor clamp", detail: "Generic vendor/renderer plus slight readPixels noise.", strict: 0.0025, moderate: 0.0008, baseline: 0.0002 },
+      { name: "Quantize performance.now()", detail: "Rounds high-resolution timers: Strict 12 ms, Moderate 8 ms, Baseline 4 ms.", strict: 12, moderate: 8, baseline: 4 },
+      { name: "Date.now() skew and quantize", detail: "Strict around 25 ms, Moderate around 12 ms, Baseline around 6 ms.", strict: 25, moderate: 12, baseline: 6 },
+      { name: "Strict-mode analytics payload poisoning", detail: "Actual extension capability: page-world send hooks can modify analytics payloads when installed and authorized. This portable file does not do that.", strict: 100, moderate: 0, baseline: 0 },
+      { name: "Storage hygiene", detail: "Blocks common tracker keys such as _ga and fbp in localStorage/sessionStorage.", strict: 100, moderate: 100, baseline: 100 },
+      { name: "Whitelist bypass", detail: "Whitelisted origins bypass poisoning and suppression entirely.", strict: 100, moderate: 100, baseline: 100 }
+    ];
+
+    const denyHosts = [
+      "www.google-analytics.com",
+      "analytics.google.com",
+      "stats.g.doubleclick.net",
+      "ssl.google-analytics.com",
+      "region1.google-analytics.com",
+      "api.segment.io",
+      "cdn.segment.com",
+      "segment.io",
+      "api.amplitude.com",
+      "amplitude.com",
+      "api2.amplitude.com",
+      "api.mixpanel.com",
+      "decide.mixpanel.com",
+      "facebook.com",
+      "www.facebook.com",
+      "connect.facebook.net",
+      "graph.facebook.com",
+      "snapads.com",
+      "sc-analytics.appspot.com",
+      "log.byteoversea.com",
+      "business-api.tiktok.com",
+      "analytics.tiktok.com",
+      "px.ads.linkedin.com",
+      "api.linkedin.com",
+      "bat.bing.com",
+      "app.link",
+      "cdn.branch.io",
+      "action.metaffiliation.com",
+      "click.linksynergy.com",
+      "track.adform.net",
+      "ib.adnxs.com",
+      "idsync.rlcdn.com",
+      "collector.github.com"
+    ];
+
+    const noteByName = new Map(notes.map((note) => [note.note, note]));
+    const noteByKey = new Map(notes.map((note) => [note.key, note]));
+    const blackPattern = ["C#4", "D#4", null, "F#4", "G#4", "A#4", null, "C#5", "D#5", null, "F#5", "G#5", "A#5", null];
+
+    const elements = {
+      whiteRow: document.getElementById("whiteRow"),
+      blackRow: document.getElementById("blackRow"),
+      keybed: document.getElementById("keybed"),
+      waveform: document.getElementById("waveform"),
+      stackFocus: document.getElementById("stackFocus"),
+      nchReserve: document.getElementById("nchReserve"),
+      nchReserveRead: document.getElementById("nchReserveRead"),
+      nchConsumed: document.getElementById("nchConsumed"),
+      nchRemaining: document.getElementById("nchRemaining"),
+      tempo: document.getElementById("tempo"),
+      tempoRead: document.getElementById("tempoRead"),
+      tempoInterval: document.getElementById("tempoInterval"),
+      currentNote: document.getElementById("currentNote"),
+      scope: document.getElementById("scope"),
+      benjiButtons: document.getElementById("benjiButtons"),
+      benjiLedger: document.getElementById("benjiLedger"),
+      poisonMode: document.getElementById("poisonMode"),
+      payloadFormat: document.getElementById("payloadFormat"),
+      nchPerEvent: document.getElementById("nchPerEvent"),
+      nchPerEventRead: document.getElementById("nchPerEventRead"),
+      risk: document.getElementById("risk"),
+      riskRead: document.getElementById("riskRead"),
+      modules: document.getElementById("modules"),
+      poisonLedger: document.getElementById("poisonLedger"),
+      captureFile: document.getElementById("captureFile"),
+      captureScale: document.getElementById("captureScale"),
+      nchPerPacket: document.getElementById("nchPerPacket"),
+      nchPerPacketRead: document.getElementById("nchPerPacketRead"),
+      captureLedger: document.getElementById("captureLedger")
+    };
+
+    const scopeContext = elements.scope.getContext("2d");
+
+    function formatNch(value) {
+      return Number(value).toFixed(6);
+    }
+
+    function tempoIntervalMs() {
+      return Math.max(1, Math.round(60000 / Number(elements.tempo.value)));
+    }
+
+    function eventCostNch(durationSeconds, note) {
+      const base = Number(elements.nchPerEvent.value);
+      const reserve = Number(elements.nchReserve.value);
+      const risk = Number(elements.risk.value);
+      const focusMultiplier = note && note.focus === "Settlement and NCH Energy" ? 1.18 : 1;
+      const durationMultiplier = Math.max(0.12, durationSeconds);
+      const amortizedDissipation = (0.05 * reserve) / risk;
+      return (base * durationMultiplier * focusMultiplier) + amortizedDissipation;
+    }
+
+    function consumeNch(amount, label, detail) {
+      state.consumedNch += amount;
+      state.events.push({
+        at: new Date().toISOString(),
+        label,
+        detail,
+        nchEnergyConsumed: amount,
+        nchEnergyConsumedTotal: state.consumedNch
+      });
+      if (state.events.length > 200) state.events.shift();
+      renderEnergy();
+    }
+
+    function renderEnergy() {
+      const reserve = Number(elements.nchReserve.value);
+      elements.nchReserveRead.textContent = formatNch(reserve);
+      elements.nchConsumed.textContent = formatNch(state.consumedNch);
+      elements.nchRemaining.textContent = formatNch(Math.max(0, reserve - state.consumedNch));
+      elements.tempoRead.textContent = String(elements.tempo.value);
+      elements.tempoInterval.textContent = String(tempoIntervalMs()) + " ms";
+      elements.nchPerEventRead.textContent = formatNch(elements.nchPerEvent.value);
+      elements.riskRead.textContent = String(elements.risk.value);
+      elements.nchPerPacketRead.textContent = formatNch(elements.nchPerPacket.value);
+      if (state.master) state.master.gain.value = Math.min(0.72, Math.max(0.05, reserve / 3200));
+      renderModules();
+    }
+
+    function ensureAudio() {
+      if (state.audio) return;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      state.audio = new AudioContextClass();
+      state.analyser = state.audio.createAnalyser();
+      state.analyser.fftSize = 1024;
+      state.master = state.audio.createGain();
+      state.delay = state.audio.createDelay(0.5);
+      state.feedback = state.audio.createGain();
+      state.delay.delayTime.value = 0.16;
+      state.feedback.gain.value = 0.18;
+      state.delay.connect(state.feedback);
+      state.feedback.connect(state.delay);
+      state.master.connect(state.analyser);
+      state.delay.connect(state.analyser);
+      state.analyser.connect(state.audio.destination);
+      renderEnergy();
+    }
+
+    function shapeForFocus(focus) {
+      if (focus === "Transport and mesh routing") return { attack: 0.012, release: 0.28, detune: 4, delay: 0.13 };
+      if (focus === "Entropy and physical proof") return { attack: 0.006, release: 0.46, detune: -7, delay: 0.23 };
+      if (focus === "Settlement and NCH Energy") return { attack: 0.018, release: 0.22, detune: 0, delay: 0.08 };
+      return { attack: 0.01, release: 0.34, detune: 2, delay: 0.16 };
+    }
+
+    function startNote(note, source) {
+      ensureAudio();
+      if (state.audio.state === "suspended") state.audio.resume();
+      if (state.active.has(note.note)) return;
+      const now = state.audio.currentTime;
+      const shape = shapeForFocus(note.focus);
+      const oscillator = state.audio.createOscillator();
+      const overtone = state.audio.createOscillator();
+      const gain = state.audio.createGain();
+      const overtoneGain = state.audio.createGain();
+      oscillator.type = elements.waveform.value;
+      oscillator.frequency.value = note.frequency;
+      oscillator.detune.value = shape.detune;
+      overtone.type = elements.waveform.value === "sine" ? "triangle" : "sine";
+      overtone.frequency.value = note.frequency * 2;
+      overtoneGain.gain.value = 0.14;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.82, now + shape.attack);
+      gain.gain.exponentialRampToValueAtTime(0.24, now + 0.18);
+      state.delay.delayTime.setTargetAtTime(shape.delay, now, 0.02);
+      oscillator.connect(gain);
+      overtone.connect(overtoneGain);
+      overtoneGain.connect(gain);
+      gain.connect(state.master);
+      gain.connect(state.delay);
+      oscillator.start(now);
+      overtone.start(now);
+      state.active.set(note.note, { oscillator, overtone, gain, started: now, source });
+      setPressed(note.note, true);
+      elements.currentNote.textContent = note.note + " / " + note.fullName;
+      state.lastPulse = performance.now();
+    }
+
+    function stopNote(note, force) {
+      const voice = state.active.get(note.note);
+      if (!voice) return;
+      if (state.latched && !force && voice.source !== "sequence") return;
+      const now = state.audio ? state.audio.currentTime : 0;
+      const duration = Math.max(0.06, now - voice.started);
+      const shape = shapeForFocus(note.focus);
+      voice.gain.gain.cancelScheduledValues(now);
+      voice.gain.gain.setTargetAtTime(0.0001, now, shape.release / 4);
+      voice.oscillator.stop(now + shape.release);
+      voice.overtone.stop(now + shape.release);
+      state.active.delete(note.note);
+      setPressed(note.note, false);
+      consumeNch(eventCostNch(duration, note), "Deterministic sound proof note", note.note + " / " + note.fullName);
+      if (state.active.size === 0) elements.currentNote.textContent = "Ready";
+    }
+
+    function setPressed(noteName, on) {
+      document.querySelectorAll('[data-note="' + noteName + '"]').forEach((button) => button.classList.toggle("is-on", on));
+    }
+
+    function clearNotes() {
+      notes.forEach((note) => stopNote(note, true));
+    }
+
+    function createKey(note, className) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "key " + className;
+      button.dataset.note = note.note;
+      button.dataset.focus = note.focus;
+      button.setAttribute("aria-label", note.note + " " + note.fullName + " keyboard key " + note.key);
+      const noteSpan = document.createElement("span");
+      noteSpan.className = "note";
+      noteSpan.textContent = note.note;
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "key-label";
+      nameSpan.textContent = note.fullName;
+      const keySpan = document.createElement("span");
+      keySpan.className = "key-label mono";
+      keySpan.textContent = "key " + note.key;
+      button.append(noteSpan, nameSpan, keySpan);
+      return button;
+    }
+
+    function renderKeys() {
+      elements.whiteRow.textContent = "";
+      elements.blackRow.textContent = "";
+      notes.filter((note) => note.kind === "white").forEach((note) => elements.whiteRow.appendChild(createKey(note, "white")));
+      blackPattern.forEach((noteName) => {
+        if (!noteName) {
+          const spacer = document.createElement("div");
+          spacer.className = "spacer";
+          elements.blackRow.appendChild(spacer);
+          return;
+        }
+        elements.blackRow.appendChild(createKey(noteByName.get(noteName), "black"));
+      });
+    }
+
+    function focusPool() {
+      const selected = elements.stackFocus.value;
+      return selected === "Full PrivateNess layered stack" ? notes : notes.filter((note) => note.focus === selected);
+    }
+
+    function applyFocusOpacity() {
+      const selected = elements.stackFocus.value;
+      document.querySelectorAll(".key").forEach((button) => {
+        const muted = selected !== "Full PrivateNess layered stack" && button.dataset.focus !== selected;
+        button.style.opacity = muted ? "0.48" : "1";
+      });
+    }
+
+    function playPulse(note, durationMs) {
+      startNote(note, "sequence");
+      window.setTimeout(() => stopNote(note, true), durationMs);
+    }
+
+    function startSequence() {
+      ensureAudio();
+      const step = tempoIntervalMs();
+      const pool = focusPool();
+      state.sequenceTimer = window.setInterval(() => {
+        const first = pool[state.sequenceIndex % pool.length];
+        const fifth = pool[(state.sequenceIndex + 4) % pool.length];
+        playPulse(first, step * 0.72);
+        if (state.sequenceIndex % 3 === 0) playPulse(fifth, step * 0.55);
+        state.sequenceIndex += 1;
+      }, step);
+      document.getElementById("playSequence").textContent = "Stop layered sequence";
+    }
+
+    function stopSequence(resetLabel = true) {
+      if (state.sequenceTimer) {
+        window.clearInterval(state.sequenceTimer);
+        state.sequenceTimer = null;
+      }
+      if (resetLabel) document.getElementById("playSequence").textContent = "Play layered sequence";
+    }
+
+    function renderBenjiButtons() {
+      elements.benjiButtons.textContent = "";
+      notes.forEach((note) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "benji-button";
+        button.dataset.benjiNote = note.note;
+        const strong = document.createElement("strong");
+        strong.textContent = note.benji;
+        const small = document.createElement("small");
+        small.textContent = "Associated sound: " + note.note + " / " + note.fullName + ". NCH Energy is consumed locally when pressed.";
+        button.append(strong, small);
+        elements.benjiButtons.appendChild(button);
+      });
+      renderBenjiLedger();
+    }
+
+    function addLedgerItem(container, title, detail, amount) {
+      const event = document.createElement("div");
+      event.className = "event";
+      const strong = document.createElement("strong");
+      strong.textContent = title;
+      const detailEl = document.createElement("span");
+      detailEl.textContent = detail;
+      const amountEl = document.createElement("code");
+      amountEl.textContent = "NCH Energy consumed: " + formatNch(amount);
+      event.append(strong, detailEl, amountEl);
+      container.prepend(event);
+      while (container.children.length > 30) container.lastElementChild.remove();
+    }
+
+    function renderBenjiLedger() {
+      if (!elements.benjiLedger.children.length) {
+        const empty = document.createElement("div");
+        empty.className = "event";
+        empty.textContent = "Press a Benji button to create a local sound-obfuscation event.";
+        elements.benjiLedger.appendChild(empty);
+      }
+    }
+
+    function pressBenji(note) {
+      const amount = eventCostNch(0.8, note);
+      playPulse(note, 860);
+      consumeNch(amount, "Benji button sound obfuscation", note.benji);
+      if (elements.benjiLedger.children.length === 1 && elements.benjiLedger.children[0].textContent.startsWith("Press a Benji")) elements.benjiLedger.textContent = "";
+      addLedgerItem(elements.benjiLedger, note.benji, "Resolve and reveal concept only; this portable file never executes NVS values.", amount);
+    }
+
+    function renderModules() {
+      if (!elements.modules) return;
+      const mode = elements.poisonMode.value;
+      elements.modules.textContent = "";
+      dataPoisonerModules.forEach((module) => {
+        const value = module[mode];
+        const max = Math.max(module.strict, module.moderate, module.baseline, 1);
+        const width = Math.min(100, Math.round((value / max) * 100));
+        const card = document.createElement("div");
+        card.className = "module";
+        const title = document.createElement("h3");
+        title.textContent = module.name;
+        const detail = document.createElement("p");
+        detail.className = "muted";
+        detail.textContent = module.detail;
+        const metric = document.createElement("code");
+        metric.textContent = "current setting: " + String(value);
+        const bar = document.createElement("div");
+        bar.className = "bar";
+        const fill = document.createElement("span");
+        fill.style.width = String(width) + "%";
+        bar.appendChild(fill);
+        card.append(title, detail, metric, bar);
+        elements.modules.appendChild(card);
+      });
+    }
+
+    function renderDemoCadencePreview() {
+      const mode = elements.poisonMode.value;
+      const amount = eventCostNch(1, noteByName.get("A5"));
+      const eventsPerMinute = Number(elements.tempo.value);
+      const estimatedMinuteCost = amount * eventsPerMinute;
+      consumeNch(amount, "DEMO Data Poisoner cadence preview", "No live endpoint, request, payload, suppression, or poisoning event was created.");
+      const event = document.createElement("div");
+      event.className = "event";
+      const title = document.createElement("strong");
+      title.textContent = "DEMO cadence plan only / mode " + mode;
+      const boundaryEl = document.createElement("span");
+      boundaryEl.textContent = "No host selected. No method selected. No payload generated. No browser extension state changed.";
+      const formatEl = document.createElement("code");
+      formatEl.textContent = "Repo payload format reference: " + elements.payloadFormat.value;
+      const cadenceEl = document.createElement("code");
+      cadenceEl.textContent = "Tempo: " + eventsPerMinute + " events per minute / interval: " + tempoIntervalMs() + " ms";
+      const costEl = document.createElement("code");
+      costEl.textContent = "DEMO NCH Energy estimate per event: " + formatNch(amount) + " / per minute: " + formatNch(estimatedMinuteCost);
+      event.append(title, boundaryEl, formatEl, cadenceEl, costEl);
+      elements.poisonLedger.prepend(event);
+      while (elements.poisonLedger.children.length > 12) elements.poisonLedger.lastElementChild.remove();
+      playPulse(noteByName.get("A5"), Math.min(700, tempoIntervalMs() * 0.55));
+    }
+
+    function packetProtocol(packet) {
+      const layers = packet && packet._source && packet._source.layers ? packet._source.layers : {};
+      if (layers.dns) return "DNS";
+      if (layers.tls) return "TLS";
+      if (layers.http || layers.http2) return "HTTP";
+      if (layers.quic) return "QUIC";
+      if (layers.tcp) return "TCP";
+      if (layers.udp) return "UDP";
+      if (layers.icmp || layers.icmpv6) return "ICMP";
+      if (layers.ip || layers.ipv6) return "IP";
+      return "FRAME";
+    }
+
+    function packetLength(packet) {
+      const layers = packet && packet._source && packet._source.layers ? packet._source.layers : {};
+      const frame = layers.frame || {};
+      const value = frame["frame.len"] || frame["frame.cap_len"] || 0;
+      return Number(Array.isArray(value) ? value[0] : value) || 0;
+    }
+
+    function packetTime(packet) {
+      const layers = packet && packet._source && packet._source.layers ? packet._source.layers : {};
+      const frame = layers.frame || {};
+      const value = frame["frame.time_epoch"] || 0;
+      return Number(Array.isArray(value) ? value[0] : value) || 0;
+    }
+
+    function layerValue(layer, key) {
+      if (!layer) return "";
+      const value = layer[key];
+      if (Array.isArray(value)) return String(value[0] || "");
+      if (value === undefined || value === null) return "";
+      return String(value);
+    }
+
+    function canonicalPacketEvent(packet) {
+      const layers = packet && packet._source && packet._source.layers ? packet._source.layers : {};
+      const frame = layers.frame || {};
+      const ip = layers.ip || {};
+      const ipv6 = layers.ipv6 || {};
+      const tcp = layers.tcp || {};
+      const udp = layers.udp || {};
+      const dns = layers.dns || {};
+      const tls = layers.tls || {};
+      const http = layers.http || {};
+      const http2 = layers.http2 || {};
+      return JSON.stringify({
+        frame_number: layerValue(frame, "frame.number"),
+        frame_time_epoch: layerValue(frame, "frame.time_epoch"),
+        frame_len: layerValue(frame, "frame.len"),
+        protocol: packetProtocol(packet),
+        ip_src: layerValue(ip, "ip.src") || layerValue(ipv6, "ipv6.src"),
+        ip_dst: layerValue(ip, "ip.dst") || layerValue(ipv6, "ipv6.dst"),
+        tcp_srcport: layerValue(tcp, "tcp.srcport"),
+        tcp_dstport: layerValue(tcp, "tcp.dstport"),
+        udp_srcport: layerValue(udp, "udp.srcport"),
+        udp_dstport: layerValue(udp, "udp.dstport"),
+        dns_qry_name: layerValue(dns, "dns.qry.name"),
+        tls_handshake_extensions_server_name: layerValue(tls, "tls.handshake.extensions_server_name"),
+        http_host: layerValue(http, "http.host"),
+        http2_authority: layerValue(http2, "http2.headers.authority")
+      });
+    }
+
+    async function sha256Hex(text) {
+      const bytes = new TextEncoder().encode(text);
+      const digest = await crypto.subtle.digest("SHA-256", bytes);
+      return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+    }
+
+    function noteForFingerprint(fingerprint) {
+      const byte = parseInt(fingerprint.slice(0, 2), 16);
+      return notes[byte % notes.length];
+    }
+
+    function noteForPacket(packet, index, fingerprint) {
+      if (elements.captureScale.value === "fingerprint" && fingerprint) return noteForFingerprint(fingerprint);
+      const protocol = packetProtocol(packet);
+      const protocolMap = {
+        DNS: "G4",
+        TLS: "B4",
+        HTTP: "G5",
+        QUIC: "C#5",
+        TCP: "F4",
+        UDP: "D4",
+        ICMP: "D5",
+        IP: "E5",
+        FRAME: "C4"
+      };
+      if (elements.captureScale.value === "protocol") return noteByName.get(protocolMap[protocol] || "C4");
+      if (elements.captureScale.value === "length") {
+        const white = notes.filter((note) => note.kind === "white");
+        return white[Math.min(white.length - 1, Math.floor(packetLength(packet) / 120) % white.length)];
+      }
+      return notes[index % notes.length];
+    }
+
+    function renderCaptureSummary(fileName) {
+      elements.captureLedger.textContent = "";
+      if (!state.capturePackets.length) {
+        const empty = document.createElement("div");
+        empty.className = "event";
+        empty.textContent = "No real capture packets loaded.";
+        elements.captureLedger.appendChild(empty);
+        return;
+      }
+      const counts = new Map();
+      let bytes = 0;
+      state.capturePackets.forEach((packet) => {
+        const protocol = packetProtocol(packet);
+        counts.set(protocol, (counts.get(protocol) || 0) + 1);
+        bytes += packetLength(packet);
+      });
+      addLedgerItem(elements.captureLedger, "REAL capture imported", fileName + " / packets parsed: " + state.capturePackets.length + " / frame bytes: " + bytes, 0);
+      state.captureEvents.slice(0, 5).forEach((event, index) => {
+        addLedgerItem(elements.captureLedger, "Full deterministic event fingerprint " + String(index + 1), event.fingerprint, 0);
+      });
+      Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).forEach(([protocol, count]) => {
+        addLedgerItem(elements.captureLedger, "Protocol " + protocol, "Packets: " + count, 0);
+      });
+    }
+
+    async function importCaptureFile(file) {
+      if (!file) return;
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      state.capturePackets = Array.isArray(parsed) ? parsed.filter((item) => item && item._source && item._source.layers) : [];
+      const playablePackets = state.capturePackets.slice(0, 512);
+      state.captureEvents = await Promise.all(playablePackets.map(async (packet) => {
+        const canonical = canonicalPacketEvent(packet);
+        return {
+          packet,
+          canonical,
+          fingerprint: await sha256Hex(canonical)
+        };
+      }));
+      renderCaptureSummary(file.name);
+    }
+
+    function playImportedCapture() {
+      if (!state.captureEvents.length) {
+        renderCaptureSummary("no file loaded");
+        return;
+      }
+      ensureAudio();
+      const limit = Math.min(96, state.captureEvents.length);
+      const firstTime = packetTime(state.captureEvents[0].packet);
+      for (let index = 0; index < limit; index += 1) {
+        const captureEvent = state.captureEvents[index];
+        const packet = captureEvent.packet;
+        const nextTime = packetTime(packet);
+        const relativeMs = elements.captureScale.value === "tempo" && firstTime && nextTime ? Math.min(6000, Math.max(0, (nextTime - firstTime) * 1000)) : index * Math.min(180, tempoIntervalMs() * 0.35);
+        window.setTimeout(() => {
+          const note = noteForPacket(packet, index, captureEvent.fingerprint);
+          playPulse(note, 130);
+          const amount = Number(elements.nchPerPacket.value);
+          consumeNch(amount, "DEMO NCH Energy estimate for imported capture packet", packetProtocol(packet) + " / frame length " + packetLength(packet) + " / SHA-256 event fingerprint " + captureEvent.fingerprint);
+        }, relativeMs);
+      }
+    }
+
+    function drawScope() {
+      const canvas = elements.scope;
+      const width = canvas.width;
+      const height = canvas.height;
+      scopeContext.clearRect(0, 0, width, height);
+      scopeContext.globalAlpha = 0.22;
+      scopeContext.strokeStyle = "#9fb2bd";
+      scopeContext.lineWidth = 1;
+      for (let x = 0; x < width; x += width / 12) {
+        scopeContext.beginPath();
+        scopeContext.moveTo(x, 0);
+        scopeContext.lineTo(x, height);
+        scopeContext.stroke();
+      }
+      scopeContext.beginPath();
+      scopeContext.moveTo(0, height / 2);
+      scopeContext.lineTo(width, height / 2);
+      scopeContext.stroke();
+      scopeContext.globalAlpha = 1;
+      scopeContext.lineWidth = 4;
+      scopeContext.strokeStyle = state.active.size ? "#45d19e" : "#78a6ff";
+      scopeContext.beginPath();
+      if (state.analyser && state.active.size) {
+        const data = new Uint8Array(state.analyser.fftSize);
+        state.analyser.getByteTimeDomainData(data);
+        for (let i = 0; i < data.length; i += 1) {
+          const x = (i / (data.length - 1)) * width;
+          const y = (data[i] / 255) * height;
+          if (i === 0) scopeContext.moveTo(x, y);
+          else scopeContext.lineTo(x, y);
+        }
+      } else {
+        const pulseAge = Math.min(1, (performance.now() - state.lastPulse) / 900);
+        const amp = 12 + (1 - pulseAge) * 30;
+        for (let x = 0; x <= width; x += 8) {
+          const y = height / 2 + Math.sin(x / 42 + performance.now() / 430) * amp;
+          if (x === 0) scopeContext.moveTo(x, y);
+          else scopeContext.lineTo(x, y);
+        }
+      }
+      scopeContext.stroke();
+      window.requestAnimationFrame(drawScope);
+    }
+
+    function switchTab(name) {
+      document.querySelectorAll(".tab").forEach((button) => {
+        button.setAttribute("aria-selected", String(button.dataset.tab === name));
+      });
+      document.querySelectorAll(".tab-panel").forEach((panel) => {
+        panel.classList.toggle("active", panel.id === "panel-" + name);
+      });
+    }
+
+    function exportState() {
+      const payload = {
+        exported_at: new Date().toISOString(),
+        artifact: "PrivateNess Data Poisoning Engine / Deterministic Sound Proof",
+        repo_reference: "github.com/jeff-bouchard/privateness-data-poisoner",
+        real_behaviors_in_this_file: [
+          "WebAudio local sound synthesis as deterministic reproducibility proof",
+          "Local JSON export",
+          "Real tshark JSON import when the user provides a capture file",
+          "Full SHA-256 deterministic event fingerprints for imported packet events"
+        ],
+        demo_behaviors_in_this_file: [
+          "NCH Energy accounting estimate",
+          "Benji-button NVS action mapping",
+          "Data Poisoner cadence preview without live poisoning"
+        ],
+        tempo_events_per_minute: Number(elements.tempo.value),
+        tempo_interval_ms: tempoIntervalMs(),
+        demo_nch_energy_reserve: Number(elements.nchReserve.value),
+        demo_nch_energy_consumed_total: Number(state.consumedNch.toFixed(6)),
+        demo_nch_energy_remaining: Number(Math.max(0, Number(elements.nchReserve.value) - state.consumedNch).toFixed(6)),
+        randpay_risk_divisor: Number(elements.risk.value),
+        imported_capture_packet_count: state.capturePackets.length,
+        imported_capture_fingerprints_sha256: state.captureEvents.map((event) => event.fingerprint),
+        events: state.events.slice()
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "privateness-piano-session.json";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function resetSession() {
+      stopSequence();
+      clearNotes();
+      state.consumedNch = 0;
+      state.events = [];
+      elements.benjiLedger.textContent = "";
+      elements.poisonLedger.textContent = "";
+      renderBenjiLedger();
+      renderEnergy();
+    }
+
+    function bindEvents() {
+      document.querySelectorAll(".tab").forEach((button) => {
+        button.addEventListener("click", () => switchTab(button.dataset.tab));
+      });
+      document.getElementById("startAudio").addEventListener("click", () => ensureAudio());
+      document.getElementById("exportState").addEventListener("click", exportState);
+      document.getElementById("resetSession").addEventListener("click", resetSession);
+      elements.keybed.addEventListener("pointerdown", (event) => {
+        const button = event.target.closest(".key");
+        if (!button) return;
+        button.setPointerCapture(event.pointerId);
+        startNote(noteByName.get(button.dataset.note), "pointer");
+      });
+      elements.keybed.addEventListener("pointerup", (event) => {
+        const button = event.target.closest(".key");
+        if (!button) return;
+        stopNote(noteByName.get(button.dataset.note));
+      });
+      elements.keybed.addEventListener("pointercancel", (event) => {
+        const button = event.target.closest(".key");
+        if (!button) return;
+        stopNote(noteByName.get(button.dataset.note));
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.repeat) return;
+        const target = event.target;
+        if (target && ["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(target.tagName)) return;
+        const note = noteByKey.get(event.key.toLowerCase());
+        if (!note) return;
+        event.preventDefault();
+        startNote(note, "keyboard");
+      });
+      document.addEventListener("keyup", (event) => {
+        const note = noteByKey.get(event.key.toLowerCase());
+        if (!note) return;
+        event.preventDefault();
+        stopNote(note);
+      });
+      document.getElementById("playSequence").addEventListener("click", () => {
+        if (state.sequenceTimer) stopSequence();
+        else startSequence();
+      });
+      document.getElementById("holdNotes").addEventListener("click", (event) => {
+        state.latched = !state.latched;
+        event.currentTarget.textContent = state.latched ? "Release held notes" : "Hold notes";
+        if (!state.latched) clearNotes();
+      });
+      document.getElementById("clearNotes").addEventListener("click", clearNotes);
+      elements.stackFocus.addEventListener("change", applyFocusOpacity);
+      [elements.nchReserve, elements.tempo, elements.nchPerEvent, elements.risk, elements.nchPerPacket].forEach((input) => {
+        input.addEventListener("input", () => {
+          renderEnergy();
+          if (input === elements.tempo) {
+            if (state.sequenceTimer) {
+              stopSequence(false);
+              startSequence();
+            }
+          }
+        });
+      });
+      elements.poisonMode.addEventListener("change", renderModules);
+      elements.benjiButtons.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-benji-note]");
+        if (!button) return;
+        pressBenji(noteByName.get(button.dataset.benjiNote));
+      });
+      document.getElementById("previewPoisonCadence").addEventListener("click", renderDemoCadencePreview);
+      document.getElementById("clearPoisonEvents").addEventListener("click", () => {
+        elements.poisonLedger.textContent = "";
+      });
+      elements.captureFile.addEventListener("change", (event) => {
+        importCaptureFile(event.target.files && event.target.files[0]).catch((error) => {
+          elements.captureLedger.textContent = "";
+          addLedgerItem(elements.captureLedger, "Capture import failed", error.message, 0);
+        });
+      });
+      document.getElementById("playCapture").addEventListener("click", playImportedCapture);
+    }
+
+    renderKeys();
+    renderBenjiButtons();
+    renderModules();
+    renderEnergy();
+    renderCaptureSummary("no file loaded");
+    applyFocusOpacity();
+    bindEvents();
+    drawScope();
+  </script>
+</body>
+</html>
